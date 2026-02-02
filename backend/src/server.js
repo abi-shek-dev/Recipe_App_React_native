@@ -61,6 +61,23 @@ app.delete("/api/favourites/:userId/:recipeId", async (req, res) => {
 
 });
 
+app.get("/api/favourites/:userId", async (req, res) => {
+
+    try {
+        
+        const { userId } = req.params;
+
+        const favorites = await db.select().from(favoritesTable).where(eq(favoritesTable.userId, userId));
+
+        res.status(200).json(favorites);
+
+    } catch (error) {
+        console.log("Error fetching favorites", error);
+        res.status(500).json({ error: "Failed to fetch favorites" });
+    }
+
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
