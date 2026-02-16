@@ -10,6 +10,9 @@ import CategoryFilter from "../../components/CategoryFilter";
 import RecipeCard from "../../components/RecipeCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
+// IMPORT YOUR API_URL HERE
+// Go up 2 levels (../..), then into 'constants', then 'api'
+import { API_URL } from "../../constants/api";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const HomeScreen = () => {
@@ -21,9 +24,37 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // --- NEW STATE FOR CONNECTION CHECK ---
+  const [backendStatus, setBackendStatus] = useState("checking"); // 'checking', 'connected', 'disconnected'
+
+  // --- NEW FUNCTION TO CHECK CONNECTION ---
+  const checkConnection = async () => {
+    try {
+      setBackendStatus("checking");
+      // We try to fetch the API URL. 
+      // Even if it returns 404, it means we CONNECTED to the server.
+      // "Network request failed" means we could not connect.
+      console.log("Pinging:", API_URL);
+      const response = await fetch(API_URL); 
+      
+      if (response.ok || response.status === 404) {
+        setBackendStatus("connected");
+        console.log("✅ Backend is reachable!");
+      } else {
+        setBackendStatus("error"); // Connected but server error
+      }
+    } catch (error) {
+      console.log("❌ Backend unreachable:", error);
+      setBackendStatus("disconnected");
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
+
+      // Run connection check alongside data loading
+      checkConnection();
 
       const [apiCategories, randomMeals, featuredMeal] = await Promise.all([
         MealAPI.getCategories(),
@@ -77,7 +108,8 @@ const HomeScreen = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // await sleep(2000);
+    // Refresh connection status too
+    checkConnection();
     await loadData();
     setRefreshing(false);
   };
@@ -86,7 +118,7 @@ const HomeScreen = () => {
     loadData();
   }, []);
 
-  if (loading && !refreshing) return <LoadingSpinner message="Loading delicions recipes..." />;
+  if (loading && !refreshing) return <LoadingSpinner message="Loading delicious recipes..." />;
 
   return (
     <View style={homeStyles.container}>
@@ -101,28 +133,48 @@ const HomeScreen = () => {
         }
         contentContainerStyle={homeStyles.scrollContent}
       >
-        {/*  ANIMAL ICONS */}
+        {/* --- NEW STATUS BAR START --- */}
+        <View style={{
+          backgroundColor: backendStatus === 'connected' ? '#dcfce7' : '#fee2e2',
+          padding: 10,
+          marginBottom: 10,
+          borderRadius: 8,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: backendStatus === 'connected' ? '#86efac' : '#fecaca'
+        }}>
+          <Ionicons 
+            name={backendStatus === 'connected' ? "checkmark-circle" : "alert-circle"} 
+            size={20} 
+            color={backendStatus === 'connected' ? "#166534" : "#991b1b"} 
+          />
+          <Text style={{
+            marginLeft: 8,
+            color: backendStatus === 'connected' ? "#166534" : "#991b1b",
+            fontWeight: 'bold'
+          }}>
+            {backendStatus === 'checking' && "Checking Connection..."}
+            {backendStatus === 'connected' && "Backend Connected!"}
+            {backendStatus === 'disconnected' && "Backend Disconnected"}
+          </Text>
+        </View>
+        {/* --- NEW STATUS BAR END --- */}
+
+        {/* ANIMAL ICONS */}
         <View style={homeStyles.welcomeSection}>
           <Image
             source={require("../../assets/images/lamb.png")}
-            style={{
-              width: 100,
-              height: 100,
-            }}
+            style={{ width: 100, height: 100 }}
           />
           <Image
             source={require("../../assets/images/chicken.png")}
-            style={{
-              width: 100,
-              height: 100,
-            }}
+            style={{ width: 100, height: 100 }}
           />
           <Image
             source={require("../../assets/images/pork.png")}
-            style={{
-              width: 100,
-              height: 100,
-            }}
+            style={{ width: 100, height: 100 }}
           />
         </View>
 
@@ -196,7 +248,6 @@ const HomeScreen = () => {
               columnWrapperStyle={homeStyles.row}
               contentContainerStyle={homeStyles.recipesGrid}
               scrollEnabled={false}
-              // ListEmptyComponent={}
             />
           ) : (
             <View style={homeStyles.emptyState}>

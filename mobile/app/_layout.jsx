@@ -1,37 +1,30 @@
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
-import * as SecureStore from "expo-secure-store"; 
-import SafeScreen from "@/components/SafeScreen";
+import { tokenCache } from "../cache"; 
 
-// 1. Define the Token Cache for persistent login
-const tokenCache = {
-  async getToken(key) {
-    try {
-      return SecureStore.getItemAsync(key);
-    } catch (err) {
-      return null;
-    }
-  },
-  async saveToken(key, value) {
-    try {
-      return SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
-    }
-  },
-};
-
-// 2. Grab your key from the .env 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+if (!publishableKey) {
+  throw new Error(
+    "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
+  );
+}
 
 export default function RootLayout() {
   return (
-    // 3. Add the publishableKey prop here!
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <ClerkLoaded>
-        <SafeScreen>
-          <Slot />
-        </SafeScreen>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          
+          {/* FIX: Changed name from "[id]" to "recipe/[id]" to match your folder structure */}
+          <Stack.Screen 
+            name="recipe/[id]" 
+            options={{ presentation: 'modal' }} 
+          />
+        </Stack>
       </ClerkLoaded>
     </ClerkProvider>
   );
