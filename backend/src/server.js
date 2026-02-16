@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors'; // Don't forget to install this if you haven't: npm install cors
+import cors from 'cors'; 
 import { ENV } from './config/env.js';
 import { db } from './config/db.js';
 import { favoritesTable } from './db/schema.js';
@@ -21,12 +21,11 @@ app.get("/api/health", (req, res) => {
 // 2. ADD FAVORITE (With Logs)
 app.post("/api/favorites", async (req, res) => {
     console.log("\n--- 📥 RECEIVED POST REQUEST: ADD FAVORITE ---");
-    console.log("👉 Request Body:", req.body); // PRINT THE DATA SENT FROM MOBILE
+    console.log("👉 Request Body:", req.body); 
 
     try {
         const { userId, recipeId, title, image, cookTime, servings } = req.body;
 
-        // Validation Log
         if (!userId || !recipeId || !title) {
             console.log("❌ Missing fields! userId:", userId, "recipeId:", recipeId, "title:", title);
             return res.status(400).json({ error: "Missing required fields" });
@@ -89,8 +88,15 @@ app.get("/api/favorites/:userId", async (req, res) => {
     }
 });
 
-// 5. LISTEN ON 0.0.0.0
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📡 Accepting connections from Emulator (10.0.2.2)`);
-});
+// --- MODIFIED SECTION FOR VERCEL ---
+
+// Only run app.listen if we are NOT in production (i.e., running locally)
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📡 Ready for connections from LAN/Wi-Fi`);
+    });
+}
+
+// Export the app so Vercel can run it as a serverless function
+export default app;
