@@ -24,10 +24,8 @@ const SignInScreen = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showMFA, setShowMFA] = useState(false);
 
   const handleSignIn = async () => {
     if (!isLoaded) return;
@@ -41,9 +39,7 @@ const SignInScreen = () => {
 
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/"); 
-      } else if (signInAttempt.status === "needs_second_factor") {
-        setShowMFA(true);
+        router.replace("/");
       } else {
         Alert.alert("Status", signInAttempt.status);
       }
@@ -54,24 +50,6 @@ const SignInScreen = () => {
     }
   };
 
-  const handleVerifyMFA = async () => {
-    if (!isLoaded) return;
-    setLoading(true);
-    try {
-      const attempt = await signIn.attemptSecondFactor({
-        strategy: "email_code",
-        code: code.trim(),
-      });
-      if (attempt.status === "complete") {
-        await setActive({ session: attempt.createdSessionId });
-        router.replace("/");
-      }
-    } catch (err) {
-      Alert.alert("Error", err.errors?.[0]?.message || "Verification failed");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <View style={authStyles.container}>
@@ -91,80 +69,58 @@ const SignInScreen = () => {
             />
           </View>
 
-          <Text style={authStyles.title}>{showMFA ? "Verify Code" : "Welcome Back"}</Text>
+          <Text style={authStyles.title}>Welcome Back</Text>
 
           <View style={authStyles.formContainer}>
-            {!showMFA ? (
-              <>
-                {/* EMAIL */}
-                <View style={authStyles.inputContainer}>
-                  <TextInput
-                    style={authStyles.textInput}
-                    placeholder="Enter email"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                  />
-                </View>
+            {/* EMAIL */}
+            <View style={authStyles.inputContainer}>
+              <TextInput
+                style={authStyles.textInput}
+                placeholder="Enter email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+              />
+            </View>
 
-                {/* PASSWORD - FIXED UI */}
-                <View style={[authStyles.inputContainer, styles.passwordWrapper]}>
-                  <TextInput
-                    style={[authStyles.textInput, { flex: 1 }]}
-                    placeholder="Enter password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                      size={20} 
-                      color={COLORS.textLight} 
-                    />
-                  </TouchableOpacity>
-                </View>
+            {/* PASSWORD */}
+            <View style={[authStyles.inputContainer, styles.passwordWrapper]}>
+              <TextInput
+                style={[authStyles.textInput, { flex: 1 }]}
+                placeholder="Enter password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                  size={20} 
+                  color={COLORS.textLight} 
+                />
+              </TouchableOpacity>
+            </View>
 
-                <TouchableOpacity 
-                  style={authStyles.authButton} 
-                  onPress={handleSignIn} 
-                  disabled={loading}
-                >
-                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={authStyles.buttonText}>Sign In</Text>}
-                </TouchableOpacity>
+            <TouchableOpacity 
+              style={authStyles.authButton} 
+              onPress={handleSignIn} 
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={authStyles.buttonText}>Sign In</Text>}
+            </TouchableOpacity>
 
-                {/* SIGN UP LINK - FIXED POSITION */}
-                <TouchableOpacity 
-                  style={{ marginTop: 20, alignItems: 'center' }} 
-                  onPress={() => router.push("/(auth)/sign-up")}
-                >
-                  <Text style={authStyles.linkText}>
-                    Don't have an account? <Text style={authStyles.link}>Sign up</Text>
-                  </Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={authStyles.inputContainer}>
-                  <TextInput
-                    style={authStyles.textInput}
-                    placeholder="Enter 6-digit code"
-                    value={code}
-                    onChangeText={setCode}
-                    keyboardType="number-pad"
-                  />
-                </View>
-                <TouchableOpacity style={authStyles.authButton} onPress={handleVerifyMFA} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={authStyles.buttonText}>Verify Code</Text>}
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setShowMFA(false)} style={{ marginTop: 15 }}>
-                  <Text style={{ textAlign: 'center', color: COLORS.primary }}>Back to Login</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            {/* SIGN UP LINK */}
+            <TouchableOpacity 
+              style={{ marginTop: 20, alignItems: 'center' }} 
+              onPress={() => router.push("/(auth)/sign-up")}
+            >
+              <Text style={authStyles.linkText}>
+                Don't have an account? <Text style={authStyles.link}>Sign up</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
